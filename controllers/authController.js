@@ -116,7 +116,7 @@ exports.protect = catchAsync( async (req, res, next)=> {
       req.user = currentUser //* critical to enable the restrictTo function below
       next()
 }) //end protect
-//mongodb+srv://wrlucas:founder211@cluster0.l2hgsnc.mongodb.net/
+
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
