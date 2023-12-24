@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
-const tourController = require('./../controllers/tourController')
+const tourController = require('../controllers/tourController')
+const authController = require('../controllers/authController')
 
 //how to get access to the parameters of a request
 // router.param('id', (req, res, next, value) => {
@@ -18,13 +19,16 @@ router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
 
 router //we can chain the get and post. Compare with note below we would have to repeat the get and post routes
     .route('/')
-    .get(tourController.getAllTours) // refactor: this replaced app.get('api/v1/tours', getAllTours)
+    .get(authController.protect, tourController.getAllTours) // refactor: this replaced app.get('api/v1/tours', getAllTours)
     .post(tourController.createTour)
 
 router
     .route('/:id') //multiple params './:id/:x/:y' -- optional params './:id/:x/:y?'
     .get(tourController.getTour)
     .patch(tourController.updateTour)
-    .delete(tourController.deleteTour)
+    .delete(
+        authController.protect, 
+        authController.restrictTo('admin', 'lead-guide'),
+        tourController.deleteTour) //the above middleware have to succeed to get here
 
 module.exports = router

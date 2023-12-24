@@ -27,17 +27,18 @@ if (process.env.NODE_ENV === 'development') {
 // how we get access to middleware.  Eg. middleware (body parser) is added to middleware stack - used to get access to the request body
 app.use(express.json()) //call json function and adds middleware to the middleware stack
 
-//how to serve a static file (notice public is not used in the url): in browser http://localhost:3000/img/logo-green-round.png
+//*how to serve a static file (notice public is not used in the url): in browser http://localhost:3000/img/logo-green-round.png
 //app.use(express.static(`${__dirname}/public`))
 
-app.use((req, res, next) => {
-    console.log(req) //the url used
-    console.log('Hello from middleware')
-    next()
-})
+// app.use((req, res, next) => {
+//     console.log(req) //the url used
+//     console.log('Hello from middleware')
+//     next()
+// })
 
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString()
+    console.log(req.headers)
     next()
 })
 
