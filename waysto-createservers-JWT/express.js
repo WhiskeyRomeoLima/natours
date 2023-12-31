@@ -1,6 +1,8 @@
 // Node.js program to create server
 // with help of Express module
  
+//* command to generate JWT: node -e "console.log(require('crypto').randomBytes(64).toString('hex'));" 
+
 // Importing express
 const express = require('express');
  
