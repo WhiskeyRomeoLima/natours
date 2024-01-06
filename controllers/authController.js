@@ -180,12 +180,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-/*
-ResetToken:  {
-  resetToken: 'ff28de5d96e68e6b91bc54d77475b548c5b14c508cb0a13322e938ea5ab6221e' //* unencrypted sent in url
-}
-this.passwordResetToken 1cc12ecbce7124c84af3b84a2546bcffe611ac2b90f7594004bfadb5788bac3f //* encrypted
-*/
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1.a)  hash unencrypted token passed in the request so we can compare with database's hashed version
   const hashedToken = crypto
