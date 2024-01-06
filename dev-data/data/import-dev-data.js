@@ -1,47 +1,52 @@
-const fs = require('fs')
-const Tour = require('../../models/tourModel')
-const mongoose = require('mongoose')
-const dotenv = require('dotenv')
-dotenv.config({path: './config.env'})
-console.log('in import-dev-data')
+const fs = require('fs');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const Tour = require('./../../models/tourModel');
 
-const DB = process.env.DATABASE
+dotenv.config({path: `${__dirname}./../../config.env`});
 
-mongoose.connect(DB, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-  useUnifiedTopology: true
-}).then(con => console.log('DB connection successful'))
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
 
-//read json file
-const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8'))
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useFindAndModify: false
+  })
+  .then(() => console.log('DB connection successful!'));
 
-//import data into database
-const importedData = async () => {
-    try {
-       await Tour.create(tours) 
-       console.log('Data Successfully Loaded!')
-       process.exit()      
-    } catch (error) {
-        console.log(error)  
-    }
-}
+// READ JSON FILE
+const tours = JSON.parse(
+  fs.readFileSync(`${__dirname}/tours.json`, 'utf-8')
+);
 
-//Delete all data from database
+// IMPORT DATA INTO DB
+const importData = async () => {
+  try {
+    await Tour.create(tours);
+    console.log('Data successfully loaded!');
+  } catch (err) {
+    console.log(err);
+  }
+  process.exit();
+};
+
+// DELETE ALL DATA FROM DB
 const deleteData = async () => {
-    try {
-        await Tour.deleteMany() 
-        console.log('Data Successfully Deleted!')
-     } catch (error) {
-        console.log(error)  
-     }
-    process.exit()         
-}
+  try {
+    await Tour.deleteMany();
+    console.log('Data successfully deleted!');
+  } catch (err) {
+    console.log(err);
+  }
+  process.exit();
+};
 
 if (process.argv[2] === '--import') {
-    importedData()
+  importData();
 } else if (process.argv[2] === '--delete') {
-    deleteData()
+  deleteData();
 }
-

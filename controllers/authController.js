@@ -14,18 +14,21 @@ const signToken = id => {
 
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
-  const cookieOptions = {
+
+  const cookieOptions = {//used in res.cookie below as the third argument
     expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000 //convert to milliseconds: day to hours to minutes to seconds to milliseconds
     ),
+    //secure: true, asign this only when in production
     httpOnly: true
   };
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true; //adding the secure property/value to cookieOptions
 
-  res.cookie('jwt', token, cookieOptions);
+            //name  token   options (see above)
+  res.cookie('jwt', token, cookieOptions); //assigns name, token and options to the cookie
 
   // Remove password from output
-  user.password = undefined;
+  //user.password = undefined; see userSchema.methods.toJSON on userModel
 
   res.status(statusCode).json({
     status: 'success',
@@ -120,6 +123,22 @@ exports.restrictTo = (...roles) => {
   };
 };
 
+
+//* Note for forgotPassword's user.save({ validateBeforeSave: false }) vs resetPassword's user.save()
+/*
+See the docs for Document.prototype.save() by default runs the validators on all modified and required fields. 
+But since we excluded password and passwordConfirm fields from the returned results by specifying 
+select: false in our schema, we encountered a problem, 
+as both of these fields are required: required: [true, 'Password is required'], but not present.
+As we never define those fields before calling .save(), the validation fails.
+
+On the contrary, when calling resetPassword, we explicitly set both the user.password & user.passwordConfirm fields, 
+so the validation passes.
+
+There are 2 simple solutions to our problem. 
+We can either set validateBeforeSave: false and completely skip validation, or 
+even better, we can use validateModifiedOnly: true, to only validate modified fields
+*/
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email
   const user = await User.findOne({ email: req.body.email });
@@ -161,41 +180,60 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
+/*
+ResetToken:  {
+  resetToken: 'ff28de5d96e68e6b91bc54d77475b548c5b14c508cb0a13322e938ea5ab6221e' //* unencrypted sent in url
+}
+this.passwordResetToken 1cc12ecbce7124c84af3b84a2546bcffe611ac2b90f7594004bfadb5788bac3f //* encrypted
+*/
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  // 1) Get user based on the token
+  // 1.a)  hash unencrypted token passed in the request so we can compare with database's hashed version
   const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)
     .digest('hex');
-
+  //1.b) Get user based on the hashed token
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() }
+    passwordResetExpires: { $gt: Date.now() } //mongodb way to do a comparison
   });
 
-  // 2) If token has not expired, and there is user, set the new password
+  // 2.a) If token has not expired, and there is user, set the new password
   if (!user) {
     return next(new AppError('Token is invalid or has expired', 400));
   }
+  //2.b set user properties
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
-  await user.save();
+  //2.c // commit changes to db
+  await user.save(); // leave validator on (set to true by default in the userModel)
 
   // 3) Update changedPasswordAt property for the user
   // 4) Log the user in, send JWT
   createSendToken(user, 200, res);
 });
 
+/*
+Explanation of 2)
+for the following code imagine a user has entered his current password and
+new password into a form (password, confirmPassword fields).
+We need to check that the current password was entered correctly before
+continuing. We use a model method correctPassword(candidatePassword, userPassword)
+where the wording of variables do not match what is being done in this case. 
+passwordCurrent is not a candidatePassword.
+But commparing two passwords to determine whether they match is accomplished.
+*/
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  // 1) Get user from collection
-  const user = await User.findById(req.user.id).select('+password');
+  // 1) Get user from collection - the user has already logged in so the we have access to req.user.id 
+  const user = await User.findById(req.user.id).select('+password'); //get id + password (not included in the request by default)
 
   // 2) Check if POSTed current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(new AppError('Your current password is wrong.', 401));
   }
+  console.log('reg.body: ', req.body)
 
   // 3) If so, update password
   user.password = req.body.password;

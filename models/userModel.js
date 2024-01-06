@@ -54,7 +54,8 @@ const userSchema = new mongoose.Schema(
         }   
     }) //*end model
 
-//create a middleware to run to check if the password has been modified
+
+//create a middleware to run which checks if the password has been modified
 //If modified re-hash the password, else just run next
 userSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next()
@@ -63,6 +64,31 @@ userSchema.pre('save', async function(next) {
     next()
 })
 
+
+
+userSchema.pre('save', function(next) {
+    if (!this.isModified('password') || this.isNew) return next();
+  
+    this.passwordChangedAt = Date.now() - 1000;
+    next();
+  });
+  
+  //query middleware use with commands that start with find
+  //limits results to those user who are active in the database
+  userSchema.pre(/^find/, function(next) {
+    // this points to the current query
+    this.find({ active: { $ne: false } });
+    next();
+  });
+
+  //instance method that removes password from the response (such as in signup)
+  userSchema.methods.toJSON = function() {
+    const sentUserData = this.toObject();
+   console.log(sentUserData)
+    delete sentUserData.password;
+    console.log(sentUserData)
+    return sentUserData;
+  };
 //instance method for comparing incoming password to the saved password
 //because select: false is set for the password property (see above), the password is not available from the model
 //so we pass in the userPassword
