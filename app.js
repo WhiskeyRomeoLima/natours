@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path')
 const morgan = require('morgan') //3rd party middleware for logging
 const rateLimit = require('express-rate-limit') //for additional security best practic
 const helmet = require('helmet') //for additional security best practice
@@ -67,7 +68,6 @@ app.use(express.static(`${__dirname}/public`))
 //Test middleware
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString()
-    console.log(req.headers)
     next()
 })
 

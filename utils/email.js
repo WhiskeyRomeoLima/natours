@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 //mailtrap.io - safe email testing for staging and development
 //https://mailtrap.io/inboxes/2541773/messages
 const sendEmail = async (options) => {
-    console.log('In Send')
+    //console.log('In Send')
     
     //* CREATE TRANSPORTER
     const transporter = nodemailer.createTransport({
@@ -14,7 +14,7 @@ const sendEmail = async (options) => {
         pass: process.env.EMAIL_PASSWORD
        } 
     })
-    console.log('Finished transporter')
+    //console.log('Finished transporter')
     
 
     //* DEFINE EMAIL OPTIONS

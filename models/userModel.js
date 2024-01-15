@@ -64,11 +64,8 @@ userSchema.pre('save', async function(next) {
     next()
 })
 
-
-
 userSchema.pre('save', function(next) {
     if (!this.isModified('password') || this.isNew) return next();
-  
     this.passwordChangedAt = Date.now() - 1000;
     next();
   });
@@ -84,9 +81,9 @@ userSchema.pre('save', function(next) {
   //instance method that removes password from the response (such as in signup)
   userSchema.methods.toJSON = function() {
     const sentUserData = this.toObject();
-   console.log(sentUserData)
+   //console.log(sentUserData)
     delete sentUserData.password;
-    console.log(sentUserData)
+    //console.log(sentUserData)
     return sentUserData;
   };
 //instance method for comparing incoming password to the saved password
@@ -116,12 +113,12 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
     
     this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex')
     
-    console.log({resetToken}, this.passwordResetToken)
+    //console.log({resetToken}, this.passwordResetToken)
     
     this.passwordResetExpires = Date.now() + 30 * 60 *1000
     
-console.log('ResetToken: ', {resetToken})
-console.log('this.passwordResetToken', this.passwordResetToken)
+//console.log('ResetToken: ', {resetToken})
+//console.log('this.passwordResetToken', this.passwordResetToken)
 
     return resetToken
   }

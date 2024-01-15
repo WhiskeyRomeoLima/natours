@@ -34,6 +34,7 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+//to preevent a user reviewing a tours multiple times
 reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
 reviewSchema.pre(/^find/, function(next) {
@@ -52,8 +53,10 @@ reviewSchema.pre(/^find/, function(next) {
   next();
 });
 
+//to call the aggregate funcion we must use a static method
 reviewSchema.statics.calcAverageRatings = async function(tourId) {
-  const stats = await this.aggregate([
+  console.log('In calcAverageRatings!!')
+  const stats = await this.aggregate([ // use stages to accomplish what we need: match and group
     {
       $match: { tour: tourId }
     },
@@ -65,8 +68,8 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
       }
     }
   ]);
-  // console.log(stats);
-
+  //console.log(stats);
+  //when deleting reviews, we need this if-else to avoid get undefined when deleting the last review
   if (stats.length > 0) {
     await Tour.findByIdAndUpdate(tourId, {
       ratingsQuantity: stats[0].nRating,
@@ -87,13 +90,14 @@ reviewSchema.post('save', function() {
 
 // findByIdAndUpdate
 // findByIdAndDelete
+// we do not have direct access to the document with only query middleware
 reviewSchema.pre(/^findOneAnd/, async function(next) {
-  this.r = await this.findOne();
-  // console.log(this.r);
+  this.r = await this.findOne(); //we need to get a ref to the document - so r = review so create a property on this and assign the review to it -- this makes the post (below work)
+  console.log(this.r);
   next();
 });
 
-reviewSchema.post(/^findOneAnd/, async function() {
+reviewSchema.post(/^findOneAnd/, async function() { //we have access to this but the review had to be added above
   // await this.findOne(); does NOT work here, query has already executed
   await this.r.constructor.calcAverageRatings(this.r.tour);
 });
@@ -101,8 +105,26 @@ reviewSchema.post(/^findOneAnd/, async function() {
 const Review = mongoose.model('Review', reviewSchema);
 
 module.exports = Review;
+
+
+
+
+
+
+
+
 /*
-virtual properteis
+//*Virtual Populate
+Recall in the schema, we a ref from reviews to tours but not the other way
+around. But we do want to query reviews for a selected array
+With 'Virtual Populate,' we can actually populate the tour with reviews.
+Even though tours do not have a ref to reviews we can get access
+to all the reviews for a certain tour, but without keeping this array of review ID's on the tour.
+
+So, think of 'Virtual Populate' like a way of keeping that array of review ID's on a tour,
+but without actually persisting it to the database.
+
+//*virtual properties
 
 In Mongoose, when you define a schema for a MongoDB document and 
 you have virtual properties (properties that are not stored in the database but 

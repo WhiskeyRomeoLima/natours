@@ -1,18 +1,7 @@
 const User = require('../models/userModel'); // imports tourModel.js 
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('./../utils/appError');
-
-exports.getAllUsers = catchAsync( async (req, res) => {
-    const users= await User.find()
-
-    res.status(200).json({
-      status: 'success',
-      results: users.length,
-      data: {
-        users
-      }
-    });
-})
+const factory = require('./handlerFactory')
 
 // The rest parameter syntax allows a function to accept an indefinite number of single arguments which then are grouped into an array, providing a way to represent variadic functions in JavaScript.
 // A function definition's last parameter can be prefixed with ..., which will cause all remaining (user supplied) parameters to be placed within an Array object.
@@ -22,9 +11,14 @@ const filterObj = (obj, ...allowedFields) => { //allowedFields now contains ['na
     Object.keys(obj).forEach(el => {
       if (allowedFields.includes(el)) newObj[el] = obj[el];
     });
-    console.log('newObj: ', newObj)
+ 
     return newObj; 
   };
+
+  exports.getMe = (req, res, next) => {
+    req.params.id = req.user.id
+    next()
+  }
 
   exports.updateMe = catchAsync(async (req, res, next) => {
     //We need to use findByIdAndUpdate(id, object containing the fields to be updated)
@@ -70,31 +64,25 @@ const filterObj = (obj, ...allowedFields) => { //allowedFields now contains ['na
     });
   })
 
-exports.getUser= (req, res) => {
-    res.status(500).json({
-        status: 'error',
-        message: 'This route is not implemented yet.'
-    })
-}
+
 
 exports.createUser = (req, res) => {
     res.status(500).json({
         status: 'error',
-        message: 'This route is not implemented yet.'
+        message: 'This route is not defined. Please use /signup instead.'
     })
 }
 
-exports.updateUser = (req, res) => {
-    res.status(500).json({
-        status: 'error',
-        message: 'This route is not implemented yet.'
-    })
-}
+exports.getUser = factory.getOne(User)
+exports.getAllUsers = factory.getAll(User)
 
-exports.deleteUser = (req, res) => {
-    res.status(500).json({
-        status: 'error',
-        message: 'This route is not implemented yet.'
-    })
-}
+//Do NOT update passwords with this
+exports.updateUser = factory.updateOne(User)
+exports.deleteUser = factory.deleteOne(User)
+// exports.deleteUser = (req, res) => {
+//     res.status(500).json({
+//         status: 'error',
+//         message: 'This route is not implemented yet.'
+//     })
+// }
 

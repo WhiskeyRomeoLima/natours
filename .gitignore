@@ -1,1 +1,4 @@
-config.env
+*.env
+*.prettierrc
+scratch.js
+waysto-createservers-JWT/

@@ -8,7 +8,7 @@ const tourSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, 'A tour must have a name'],
-      unique: true,
+      unique: true, //mongoose will create an index when true
       trim: true,
       maxlength: [40, 'A tour name must have less or equal than 40 characters'],
       minlength: [10, 'A tour name must have more or equal than 10 characters'],
@@ -37,7 +37,7 @@ const tourSchema = new mongoose.Schema(
       default: 4.5,
       min: [1, 'Rating must be above 1.0'],
       max: [5, 'Rating must be below 5.0'],
-      set: val => Math.round(val * 10) / 10 // 4.666666, 46.6666, 47, 4.7
+      set: val => Math.round(val * 10) / 10 // 4.666666 * 10 --> Math.round(46.6666) --> 47 / 10 =  4.7
     },
     ratingsQuantity: {
       type: Number,
@@ -130,10 +130,21 @@ and not the user corresponding to the IDs.
     toObject: { virtuals: true }
   }
 );
-  
+ //* indexes
+tourSchema.index({price: 1, ratingsAverage: -1}) // '1'  = sort price in ascending order -- -1 donotes descending
+tourSchema.index({slug: 1})
+tourSchema.index({startLocation: '2dsphere'})
+
 tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7 //note arrow functions do not get their own this, so we use a regular function declaration
 })
+
+// Virtual populate
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour', //the name of the field in the other model: the Review model in this case which has a foreign call tour.
+  localField: '_id'  //the id of the tour
+});
 
 //* DOCUMENT MIDDLEWARE: 
 // runs before create and save - not updates
@@ -184,12 +195,12 @@ tourSchema.post(/^find/, function(docs, next) {
 });
 
 // AGGREGATION MIDDLEWARE
-tourSchema.pre('aggregate', function(next) { //this points to the current aggregation
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-  //pipeline is an array so use unshift to add items to beginning
-  console.log(this.pipeline());
-  next();
-});
+// tourSchema.pre('aggregate', function(next) { //this points to the current aggregation
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+//   //pipeline is an array so use unshift to add items to beginning
+//   //console.log(this.pipeline());
+//   next();
+// });
 
   const Tour = mongoose.model('Tour', tourSchema)
 

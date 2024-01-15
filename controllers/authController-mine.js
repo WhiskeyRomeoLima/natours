@@ -132,7 +132,6 @@ exports.restrictTo = (...roles) => {
 }
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  console.log('In forgotPasword handler')
   
   //*get user based on posted email
   const user = await User.findOne({ email: req.body.email });
@@ -150,7 +149,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const message = `
   Forgot your password? Submit create a new password and confirm password to: ${resetURL},\n If you didn't forget your password, please ignore this email.`
   
-  console.log('before try')
   try {
     await sendEmail({
     email: user.email,
@@ -158,14 +156,13 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     message
   })
 
-  console.log('Before response')
-  
+
   res.status(200).json({
     status: 'success',
     message: 'Token sent to email'
 
   })
-  console.log('Before catch')
+
   
   } catch (error) { // to call user.save anytime we modify the document to save to database
       user.passwordResetToken = undefined
@@ -202,7 +199,7 @@ exports.resetPassword = catchAsync (async (req, res, next) => {
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() }
   });
-console.log('begin check for user')
+
   if (!user) {
     return next(new AppError('Token is invalid or has expired', 400))
   }
